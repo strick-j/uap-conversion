@@ -1,0 +1,23 @@
+# Secrets
+token
+
+# Tenant-specific policy data (pulled/converted per tenant — not part of the tool)
+old-policies/
+new-policies/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Tooling / OS
+.claude/
+.DS_Store
