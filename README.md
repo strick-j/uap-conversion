@@ -1,6 +1,6 @@
 # uap-conversion
 
-Migrate legacy **CyberArk SIA / DPA access policies** to the new
+Migrate legacy **Idira SIA / DPA access policies** to the new
 **UAP (Access Control Policies)** format — inventory, convert, and create them
 on your tenant.
 
@@ -10,30 +10,47 @@ name only). UAP uses a single flat policy shape (`metadata` / `policyEntitlement
 / `conditions` / `targets` / `principals` / `behavior`) with principals
 identified by directory id. This tool automates the gap.
 
-> Not affiliated with or endorsed by CyberArk. Use at your own risk; review the
+> Not affiliated with or endorsed by Idira. Use at your own risk; review the
 > output before creating policies on a production tenant.
 
 ## Pipeline
 
-Three independent stages — run them in order, or stop after `convert` to review:
+Four stages — run them in order, or stop after `convert` to review:
 
 ```bash
 # 1. INVENTORY — pull legacy SIA policies into old-policies/
-python3 -m converter.pull    --tenant <tenant> --token token
+python3 -m converter.pull --tenant <tenant> --token token
 
 # 2. CONVERT  — old-policies/ -> new-policies/ (UAP format), resolving principals
 python3 -m converter.convert --resolve --drop-unresolved \
         --identity-tenant <identity-tenant>
 
-# 3. CREATE   — POST every converted policy to the UAP API
-python3 -m converter.post    --tenant <tenant> --token token
+# 3. DELETE   — remove the legacy SIA policies (dry run first, then --confirm)
+python3 -m converter.delete --tenant <tenant> --token token            # preview
+python3 -m converter.delete --tenant <tenant> --token token --confirm  # delete
+
+# ===> Now switch the tenant to UAP (Access Control Policies) mode <===
+#      UAP policies cannot be created until the tenant has been migrated.
+
+# 4. CREATE   — POST every converted policy to the UAP API
+python3 -m converter.post --tenant <tenant> --token token
 ```
+
+> **Important:** Step 4 requires the tenant to already be converted to UAP. After
+> deleting the legacy SIA policies (step 3), migrate the tenant to UAP (Access
+> Control Policies) mode; only then will `converter.post` succeed.
 
 | Stage | Module | Reads | Writes |
 |-------|--------|-------|--------|
 | Inventory | `converter.pull` | SIA JIT API | `old-policies/*.json` |
 | Convert | `converter.convert` | `old-policies/` (+ Identity API) | `new-policies/*.json` |
+| Delete | `converter.delete` | `old-policies/` → SIA JIT API | `old-policies/deleted-policies.json` log |
 | Create | `converter.post` | `new-policies/` | UAP API (+ `created-policies.json` log) |
+
+Stage 3 is destructive and runs **after** the inventory is complete — the tenant
+must be cleared of legacy SIA policies before switching it to UAP. It deletes
+only the policies present in `old-policies/` (ones you've already backed up) and
+is **dry-run by default** (requires `--confirm`).
 
 ## What the conversion handles
 

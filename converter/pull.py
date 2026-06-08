@@ -123,11 +123,29 @@ class SiaSession:
             body = response.read().decode("utf-8")
             return json.loads(body) if body else {}
 
+    def delete(self, path: str) -> int:
+        """DELETE the path; return the HTTP status (no raise on 4xx/5xx)."""
+        request = urllib.request.Request(
+            self._base + path,
+            method="DELETE",
+            headers={
+                "Authorization": f"Bearer {self._token}",
+                "Accept": "application/json",
+            },
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+                return response.status
+        except urllib.error.HTTPError as error:
+            return error.code
 
-def _base_url(args) -> str:
+
+def _base_url(args) -> str | None:
     if args.base_url:
         return args.base_url
-    return f"https://{args.tenant}-jit.cyberark.cloud"
+    if args.tenant:
+        return f"https://{args.tenant}-jit.cyberark.cloud"
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:

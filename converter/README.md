@@ -1,6 +1,6 @@
 # DPA/SIA → UAP policy migration
 
-Three-stage pipeline, pure Python 3.9+ (stdlib only at runtime):
+Four-stage pipeline, pure Python 3.9+ (stdlib only at runtime):
 
 ```bash
 # 1. INVENTORY — pull legacy SIA policies into old-policies/
@@ -10,7 +10,13 @@ python3 -m converter.pull    --tenant <tenant> --token token
 python3 -m converter.convert --resolve --drop-unresolved \
         --identity-tenant <identity-tenant>
 
-# 3. CREATE   — POST every converted policy to the UAP API
+# 3. DELETE   — remove the legacy SIA policies (dry run first, then --confirm)
+python3 -m converter.delete  --tenant <tenant> --token token --confirm
+
+# ===> Switch the tenant to UAP (Access Control Policies) mode before step 4 <===
+#      UAP policies cannot be created until the tenant has been migrated.
+
+# 4. CREATE   — POST every converted policy to the UAP API
 python3 -m converter.post    --tenant <tenant> --token token
 ```
 
@@ -98,6 +104,26 @@ rest of the policy still converts. Review those policies and add the correct
 principal manually. Duplicate principals (same identity listed under two source
 directories in the old data) are de-duplicated automatically.
 
+## Stage 3 — delete (decommission legacy SIA)
+
+```bash
+python3 -m converter.delete --tenant <tenant> --token token            # dry run
+python3 -m converter.delete --tenant <tenant> --token token --confirm  # delete
+```
+
+Removes the legacy SIA policies via `DELETE /api/access-policies/{id}` so the
+tenant can be switched to UAP. Safeguards:
+
+- **Dry-run by default** — prints exactly what would be deleted; `--confirm`
+  required to act.
+- Deletes **only** policies present in `old-policies/` (ones you've inventoried),
+  read straight from those files' `policyId`.
+- Per-policy failures are non-fatal; deleted ids are logged to
+  `old-policies/deleted-policies.json`.
+
+The tenant must then be migrated to UAP **before** stage 4 — UAP policies cannot
+be created until it is.
+
 ## Files
 
 - `pull.py` — stage 1: list + fetch legacy SIA policies to `old-policies/`.
@@ -105,7 +131,8 @@ directories in the old data) are de-duplicated automatically.
 - `transform.py` — pure old→new transform (no I/O).
 - `principals.py` — resolver interface + placeholder + Identity implementations.
 - `convert.py` — stage 2 CLI: read dir, drop/split, write files + manifest.
-- `post.py` — stage 3: bulk/targeted create with merge-safe id logging.
+- `delete.py` — stage 3: delete inventoried SIA policies (dry-run by default).
+- `post.py` — stage 4: bulk/targeted create with merge-safe id logging.
 
 ## Tests
 
