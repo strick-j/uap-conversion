@@ -4,7 +4,7 @@
 Two implementations:
   * PlaceholderResolver - no network; emits <lookup:...> tokens. Default, so
     the converter always runs and produces reviewable output.
-  * IdentityResolver - queries the CyberArk Identity API. Wire in once you
+  * IdentityResolver - queries the Idira Identity API. Wire in once you
     have a service-user token. Endpoints are tenant/version specific, so the
     queries are isolated here and easy to adjust.
 
@@ -87,7 +87,7 @@ class _Candidate:
 
 
 class IdentityResolver:
-    """Resolves principal ids via the CyberArk Identity API.
+    """Resolves principal ids via the Idira Identity API.
 
     Validated against a live tenant:
       * ROLE  -> Redrock: SELECT ID, Name FROM Role

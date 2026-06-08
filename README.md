@@ -4,6 +4,9 @@ Migrate legacy **Idira SIA / DPA access policies** to the new
 **UAP (Access Control Policies)** format — inventory, convert, and create them
 on your tenant.
 
+> Idira is the platform formerly known as CyberArk (now part of Palo Alto
+> Networks). API hostnames remain `*.cyberark.cloud`.
+
 The older SIA "access policies" use a deprecated schema (provider-keyed
 `providersData`, multiple `userAccessRules` per policy, principals identified by
 name only). UAP uses a single flat policy shape (`metadata` / `policyEntitlement`

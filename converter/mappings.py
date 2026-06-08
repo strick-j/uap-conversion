@@ -1,6 +1,6 @@
 """Static lookup tables for the old DPA/SIA -> new UAP policy conversion.
 
-All values are confirmed against a real tenant sample and the CyberArk
+All values are confirmed against a real tenant sample and the Idira
 ark-sdk-python UAP models. Kept in one place so the transform stays a pure
 data mapping with no magic strings scattered around.
 """
